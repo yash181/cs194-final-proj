@@ -1,0 +1,485 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 194 Final Project</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+	<body>
+
+		<h1 align="middle">CS 194 Final Project</h1>
+		<h1 align="middle">Yash Agarwal and Devesh Agarwal</h2>
+		<h4 align="middle">Website Credit: Rami Moustafa, cs194-26-abo</h4>
+
+
+		<br>
+
+			<h2 align="middle">Project Selection</h2>
+				<p> 
+					For the purpose of this project, our team decided to work on the three following projects: 
+				</p>
+					<ul>
+					<li> Poor Man's Augmented Reality</li>
+					<li> Lightfield Camera: Depth Refocusing and Aperture Adjustment with Light Field Data </li>
+					<li> Reimplementation of: A Neural Algorithm of Artistic Style (available here: <a href="https://arxiv.org/pdf/1508.06576.pdf">Paper link.</a>) </li>
+					</ul>
+
+			<h2 align="middle">Project 1: Augmented Reality</h2>
+
+			<h2 align="middle-left">Overview</h2>
+				<p>
+					For our first project we implemented 'Poor Man's Augmented Reality' where we captured a video at home and inserted a synthetic object into the scene. 
+				</p>
+
+				<h2 align="middle-left">Set Up</h2>
+				<p>
+					To start us off, we built this physical rectangular box and marked it with a regular grid pattern. We filmed an input video with different perspectives of the box as seen below. 
+				</p>
+
+			<iframe src="https://drive.google.com/file/d/1yCmQiX1kx_fwAKqCPxdZsWDWjRHyleJg/preview" width="640" height="480"></iframe>
+
+				<h2 align="middle-left"> Keypoints with known 3D world coordinates</h2>
+				<p>
+					Next, we marked the points in the first frame of our video and got their 3D world points. In order to do this we measured the dimensions of the box and of consecutive points in the pattern. Then, we centered the 3D world coordinates around the center of the box.
+				</p>
+
+			
+				<h2 align="middle-left"> OpenCV Tracker</h2>
+				<p>
+					Using OpenCV tracker, we then kept track of the points identified in the first frame through the consecutive frames of the video. We used a bounding box of 20x20 pixels in order to achieve this successfully. We used the CSRT tracker instead of the Median Flow as the median flow tracker would result in larger and larger bounding boxes.
+				</p>
+
+<iframe src="https://drive.google.com/file/d/1nFkwT9Q4jaROMvw0ct42z6IdNt6KqoZy/preview" width="640" height="480"></iframe>
+
+				<h2 align="middle-left"> Callibrating the Camera</h2>
+				<p>
+					With the corresponding points and the 3D world coordinates, we were able to use a 3x4 projection matrix on each frame to project the 4 dimensional real world, homogenous coordinates to 3 dimensional image homogenous coordinates. Below, you can see a projection of the origin and axes:
+				</p>
+
+<iframe src="https://drive.google.com/file/d/1Rujjtatcp5JKRzOfp9G4khvLkkeNrkeW/preview" width="640" height="480"></iframe>
+
+				<h2 align="middle-left"> Projecting the Cube </h2>
+				<p>
+					Finally, we used the draw function on the image matrices defined above. Below you can see a cube projected as such.
+				</p>
+
+				<iframe src="https://drive.google.com/file/d/1yu72dXyAioC1gZaX0A4gfMXUiyqtI9sJ/preview" width="640" height="480"></iframe>
+				<hr>
+
+				<h2 align="middle">Project 2: Lightfield Camera</h2>
+
+				<h2 align="middle-left">Overview</h2>
+				<p>
+					Our next project is an implementation of lightfield camera. This project takes inspiration from the idea of <a href=http://graphics.stanford.edu/papers/lfcamera/lfcamera-150dpi.pdf>this paper</a>) by Ng et al. which demonstrates that capturing multiple images over a plane orthogonal to the optical axis enables achieving complex effects using very simple operations like shifting and averaging. We attempted to reproduce these effects using real lightfield data.
+				</p>
+
+				<h2 align="middle-left">Depth Refocussing</h2>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="lfc/chess/chess_focus.gif" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="lfc/final_truck/truck_focus.gif" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<p>
+					First, we worked on a depth refocus effect. Here, we shifted the images sequentially and averaged them to allow a focus on the same object at different depth levels. 
+				</p>
+				<p>
+				We used all the grid images in the dataset to generate these refocussed depth images. Given a series of images taken at the same optical axis direction, the objects that are further away vary in position whereas nearer objects do not (vary very little). Averaging then blurs nearby images and focusses on further images. Shifting before averaging allows different parts of the picture to be put in focus. 
+				</p>
+
+				<p>
+				Below is the example of shifting the image at (x, y) around the center by (x-8, 8-y) x f: 
+				</p>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				        <img src="lfc/chess/shifted_scale0_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=0</figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/chess/shifted_scale1_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=1</figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/chess/shifted_scale2_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=2 </figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/chess/shifted_scale3_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle"> f=3 </figcaption>
+				        <br>
+				      </td>
+				     <td>
+				        <img src="lfc/chess/shifted_scale4_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle"> f=4 </figcaption>
+				        <br>
+				      </td>
+			
+				    </tr>
+				  </table>
+				</div>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				        <img src="lfc/final_truck/shifted_scale0_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=0</figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/final_truck/shifted_scale1_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=1</figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/final_truck/shifted_scale2_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=2</figcaption>
+				        <br>
+				      </td>
+				      <td>
+				        <img src="lfc/final_truck/shifted_scale3_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=3</figcaption>
+				        <br>
+				      </td>
+				     <td>
+				        <img src="lfc/final_truck/shifted_scale4_average.png" align="middle" width="200px"/>
+				        <figcaption align="middle">f=4</figcaption>
+				        <br>
+				      </td>
+			
+				    </tr>
+				  </table>
+				</div>
+
+				
+
+				
+
+				<h2 align="middle-left">Aperture Adjustment</h2>
+				<p>
+					Next, we emulated different magnitudes of aperture of the lightfield camera. Getting an average of a large number of images over the grid (perpendicular ot the optical axis) gives us more lights and image positions. At a fixed depth of f = 1, we emulated the different aperture sizes as shown below: 
+				</p>
+
+				<h2 align="middle-left">Depth Refocussing</h2>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="lfc/chess/chess_aperture.gif" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="lfc/final_truck/truck_aperture.gif" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+
+				<h2 align="middle-left"> Bells and Whistles </h2>
+				<p>
+					We used the same process on custom images of our own and computed the following results. We created a grid of 5x5 equally spaced points and put an iPhone at each of those point click 25 images of the ceiling. I think this wasn't successful as the change between consecutive images in the grid is a lot more than it should be. The angle also changes between images due to human error and we definitely need more images to get a more focused image.
+				</p>
+				
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      	<figure>
+								  <img src="lfc/slow_own.gif" alt="gif" width="400px" class="center"> 
+								  <figcaption>Depth Refocussing</figcaption>
+								</figure>
+				      		
+				      </td>
+				       <td>
+				      	<figure>
+								  <img src="lfc/own_aperture.gif" alt="gif" width="400px" class="center"> 
+								  <figcaption>Aperture Adjustment</figcaption>
+								</figure>
+				      		
+				      </td>
+
+
+				    </tr>
+				  </table>
+				</div>
+
+
+				<hr>
+
+				<h2 align="middle">Project 3: Re-implimentation of "A Neural Algorithm of Artistic Style"</h2>
+
+				<h2 align="middle-left">Overview</h2>
+				<p>
+					Our final project was the one we found most interesting! In this project we reimplemented this <a href="https://arxiv.org/pdf/1508.06576.pdf">paper</a>) by Leon A. Gatys, Alexander S. Ecker and Matthias Bethge. In essence, we attempted to separate the styles and contents of artworks and apply the stylistic elements of some masterpieces to other images. We achieved this using Convolutional Neural Networks! 
+				</p>
+
+				<h2 align="middle-left">Model Architecture</h2>
+				<p>
+
+					In order to implement this paper we used recommendations in the paper itself to set up the model. We imported the pretrained model VGG-19 which is a 19-layer convolutional neural network which contains five max-pooled layers. We then contextualized and rebuilt the model accounting for style and content loss on (parameter intake) layers. 
+
+
+					
+				</p>
+
+				<p>
+
+					We differentiated the model significantly by adding a learning rate parameter to the optimizer and optimizing for the ideal learning rate. 
+
+					We experimented with both Average Pooling and Max Pooling and since the VGG-19 model comes with MaxPool layers. We found AveragePooling performs better so we decided to make that a part of the project. 
+
+					For Alpha-Beta weights where alpha is style weight and beta is content weight we modified the paper's directions of using a 1000:1 and instead went with a 1 x 10^7: 1 ratio. 
+
+					We also changed the style loss function to not include a weight on every style layer since we saw this was performing better. 
+				</p>
+
+				<p>
+
+					As recommended in the paper, the content layers we used were:
+					<ul>
+					<li> 'conv_4_1' </li>
+					</ul>
+					 
+
+					 and the style layers we used were:
+
+					 <ul>
+					<li> 'conv1_1' </li>
+					<li> 'conv2_1' </li>
+					<li> 'conv3_1' </li>
+					<li> 'conv4_1' </li>
+					<li> 'conv5_1' </li>
+					</ul>
+
+				</p>
+
+				<p>
+					Here is the model below: 
+				</p>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		
+				     <figure>
+								  <img src="nn/vgg.png" alt="gif" width="400px" class="center">
+								  <figcaption>VGG pre-trained model</figcaption>
+								</figure>
+				      </td>
+				      <td>
+				      	<figure>
+								  <img src="nn/our_model.png" alt="gif" width="400px" class="center">
+								  <figcaption>Our model</figcaption>
+								</figure>
+				      		
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+
+				<h2 align="middle-left"> Styles Implemented in the Paper</h2>
+				<p>
+
+					As implemented in the paper we implemented a transfer of the styles of the following papers: 
+
+					<ul>
+						<li> Femme nue assise by Pablo Picasso, 1910 </li>
+						<li> The Shipwreck of the Minotaur by J.M.W. Turner, 1805.</li>
+						<li> The Starry Night by Vincent van Gogh, 1889 </li>
+						<li> Der Schrei by Edvard Munch, 1893 </li>
+						
+						<li> Composition VII by Wassily Kandinsky, 1913.</li>
+					</ul>
+
+					We implemented these styles onto the content of Neckarfront in Tubingen, Germany by Andreas Praefcke as the input image.
+		
+				</p>
+
+				<img src="nn/tubingen.jpg" alt="gif" width="400px" class="center">
+
+
+
+				<p> The results are shown below: </p> 
+
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/seated-nude.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/femme-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/the-scream.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/scream-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/the-shipwreck-of-the-minotaur.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/shipwreck-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/houses-of-parliament.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/hp-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/the-starry-night.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/starry-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/styles/composition-vii.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/composition-tb.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<h2 align="middle-left"> Bells and Whistles: Our own Images</h2>
+				<p>
+
+					We also implemented this algorithm on the following custom images including one featuring the writers of this Algorithm: Devesh and Yash!
+				</p>
+
+								<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/devyash.jpeg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/nude-dev-yash.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+								<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/new-york.png" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/new-york-starry.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<p>
+
+					We also had the following failure case. We tried to apply the style of Bob's Burgers (right) to the Sunset image. This was a massive failure likely due to the lack of clear style in our style image and the stark difference in the type of images - one was a characters portrait and the other was bland landscape. 
+
+				</p>
+
+
+								<div align="middle">
+				  <table style="width=100%">
+				    <tr>
+				      <td>
+				      		<img src="nn/bb.jpg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/sunset.jpeg" alt="gif" width="400px" class="center">
+				      </td>
+				      <td>
+				      		<img src="nn/sunset-bob.png" alt="gif" width="400px" class="center">
+				      </td>
+				     
+				    </tr>
+				  </table>
+				</div>
+
+				<hr>						
+	</body>
+</html>
